@@ -57,11 +57,9 @@ QUITTER
 
 Compilez le source CRTRPGDOC et exécutez-le en tapant CRTRPGDOC ('RPGDOC') <- Spécifiez l'emplacement final des objets finis.
 Il compilera les autres objets RPGDOC dans la bibliothèque que vous aurez spécifiée.
-![image](https://user-images.githubusercontent.com/13730057/187934530-f3d52db7-353c-4be2-989e-e5c09873e3d6.png)
 
 Utilisation RPGDOC
 
 Ajoutez RPGDOC à votre *LIBL ADDLIBLE RPGDOC
 Tapez et demandez (F4) la commande "RPGDOC". Entrez les informations 
 informations requises et appuyez sur ENTER. (F1 affichera un écran d'AIDE)
-![image](https://user-images.githubusercontent.com/13730057/187934578-14758e1c-74b1-425e-b1b8-afd99bd3dc0d.png)
