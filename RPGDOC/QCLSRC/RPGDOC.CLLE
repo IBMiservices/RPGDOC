@@ -1,0 +1,93 @@
+/**                                                                           +
+ * Driver for RPGDOC program.  Interpretes parameters and calls RPGDOC_R      +
+ * for each source member that statisfies the request.                        +
+ * <br />                                                                     +
+ * This module is a part of the RPGDOC program, which is released as free     +
+ * software.  You can redistribute it and/or modify it under the terms of the +
+ * GNU General Public License as published by the Free Software Foundation,   +
+ * either version 3 of the License, or (at your option) any later version.    +
+ * This program is distributed in the hope that it will be useful,            +
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of             +
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              +
+ * GNU General Public License for more details.                               +
+ * (Available at http://www.gnu.org/licenses/)                                +
+ * <br />                                                                     +
+ * &copy; 2006 by Chris Wolcott                                               +
+ * <br />                                                                     +
+ * @author Chris Wolcott - 13-JUN-06  Written                                 +
+ * @version V0R1M0                                                            +
+ * @see RPGDOC_R                                                              +
+ * @param  *CHAR  &SRCF                                                       +
+ * @param  *CHAR  &SRCM                                                       +
+ * @param  *CHAR  &PATH                                                       +
+ */
+             PGM        PARM(&SRCF &SRCM &PATH)
+
+             DCL        VAR(&SRCF      ) TYPE(*CHAR) LEN(   20)
+             DCL        VAR(&SRCM      ) TYPE(*CHAR) LEN(   10)
+             DCL        VAR(&PATH      ) TYPE(*CHAR) LEN(   50)
+
+             DCL        VAR(&SrcFile   ) TYPE(*CHAR) LEN(   10)
+             DCL        VAR(&SrcLib    ) TYPE(*CHAR) LEN(   10)
+             DCL        VAR(&SrcMbr    ) TYPE(*CHAR) LEN(   10)
+             DCL        VAR(&SrcType   ) TYPE(*CHAR) LEN(   10)
+             DCL        VAR(&SrcText   ) TYPE(*CHAR) LEN(   50)
+             DCL        VAR(&MbrRltn   ) TYPE(*CHAR) LEN(   10)
+             DCL        VAR(&rtnVal    ) TYPE(*CHAR) LEN(    4)
+             DCL        VAR(&genMbr    ) TYPE(*LGL )
+             DCL        VAR(&curDir    ) TYPE(*CHAR) LEN( 1024)
+             DCL        VAR(&bufLen    ) TYPE(*DEC ) LEN(  7 0) VALUE(1024)
+
+             CHGVAR     VAR(&curDir) VALUE(' ')
+             RTVCURDIR  RTNDIR(&curDir) DIRNAMLEN(&bufLen)
+             CHGCURDIR  DIR(&PATH)
+
+             CHGVAR     VAR(&SrcFile) VALUE(%SST(&SRCF  1 10))
+             CHGVAR     VAR(&SrcLib)  VALUE(%SST(&SRCF 11 10))
+             IF         COND(&SRCM *EQ '*ALL      ') THEN(+
+               CHGVAR   VAR(&SrcMbr) VALUE('*FIRSTMBR'))
+             ELSE       CMD(+
+               CHGVAR   VAR(&SrcMbr) VALUE(&SRCM))
+             CHGVAR     VAR(&MbrRltn) VALUE('*SAME')
+/*\                                                                            +
+*** Check to see if a generic member name was specified.                       +
+\*/
+             CHGVAR     VAR(&genMbr) VALUE('0')
+             CHGVAR     VAR(&bufLen) VALUE(10)
+GenCHECK:    IF         COND(%SST(&SrcMbr &bufLen 1) *EQ '*') THEN(+
+               CHGVAR   VAR(&genMbr) VALUE('1'))
+             ELSE       CMD(DO)
+               CHGVAR   VAR(&bufLen) VALUE(&bufLen - 1)
+               IF       COND(&bufLen > 0) THEN(+
+                 GOTO   CMDLBL(GenCHECK))
+             ENDDO
+/*\                                                                            +
+*** Loop through all members that satisfy the request, calling RPGDOC for each.+
+\*/
+STRLOOP:     RTVMBRD    FILE(&SrcLib/&SrcFile) MBR(&SrcMbr &MbrRltn) +
+                          RTNLIB(&SrcLib) RTNMBR(&SrcMbr) +
+                          SRCTYPE(&SrcType) TEXT(&SrcText)
+             MONMSG     MSGID(CPF3019 CPF3049) EXEC(+
+               GOTO     CMDLBL(ENDLOOP))
+             CHGVAR     VAR(&MbrRltn) VALUE('*NEXT     ')
+             OVRDBF     FILE(SRCMBR) TOFILE(&SRCLIB/&SRCFILE) +
+                          MBR(&SRCMBR) OVRSCOPE(*JOB)
+             CALLPRC    PRC(RPGDOC_R) PARM((&SrcMbr) (&SrcText)) +
+                          RTNVAL(%BIN(&RTNVAL 1 4))
+             DLTOVR     FILE(SRCMBR) LVL(*JOB)
+             MONMSG     MSGID(CPF0000)
+             IF         COND(%BIN(&rtnVal 1 4) *EQ 0) THEN(DO)
+                SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) MSGDTA('RPGDOC created for member ' *TCAT &SrcMbr) +
+                             TOPGMQ(*EXT) MSGTYPE(*STATUS)
+             ENDDO
+             ELSE       CMD(DO)
+                SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('RPGDOC not created for member ' *TCAT &SrcMbr) +
+                             TOPGMQ(*EXT) MSGTYPE(*STATUS)
+             ENDDO
+
+             IF         COND(&genMbr) THEN(+
+               GOTO     CMDLBL(STRLOOP))
+
+ ENDLOOP:    CHGCURDIR  DIR(&curDir)
+
+             ENDPGM
