@@ -1,0 +1,41 @@
+:PNLGRP.
+.*
+.*‚SRVDOC COMMAND HELP                                                      €
+.*
+:HELP name='SRVDOC'.SRV DOC Generator - Help
+:P.
+Creates documentation from a *SRVPGM Object in the style of 'JAVADOC'
+output.  The .HTML ouput file is named after the object being documented and
+will be placed in the directory specified in this command.
+:P.
+:XH3.&MSG(CPX0005,QCPFMSG). SRVDOC
+:P.:HP3.*ESCAPE &MSG(CPX0006,QCPFMSG).:EHP3.
+:DL COMPACT.
+:DT.CPF0001
+:DD.&MSG(CPF0001,QCPFMSG).
+:EDL.
+:EHELP.
+.*
+:HELP name='SRVDOC/SRVOBJ'.Service Program Object
+:XH3.Service Program Object (SRVPGM).
+:P.
+The name and library where the object is located.
+:P.
+The possible Library values are:
+:P.
+:PARML.
+:PT.:PK DEF.*LIBL:EPK.
+:PD.All libraries in the job's library list are searched until the first match
+is found.
+:PT.library-name
+:PD.Specify the name of the library containing the object.
+:EPARML.
+:EHELP.
+.*
+:HELP name='SRVDOC/PATH'.Directory for Documentaion
+:XH3.Directory for Documentation (PATH).
+:P.
+The directory where the .HTML documentation should be placed.
+:EHELP.
+.*
+:EPNLGRP.
