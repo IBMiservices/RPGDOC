@@ -1,0 +1,71 @@
+/**                                                                           +
+ * Driver for SRVDOC program.  Interpretes parameters and calls SRVDOC_R      +
+ * for each *SRVPGM object that statisfies the request.                       +
+ * <br />                                                                     +
+ * This module is a part of the SRVDOC program, which is released as free     +
+ * software.  You can redistribute it and/or modify it under the terms of the +
+ * GNU General Public License as published by the Free Software Foundation,   +
+ * either version 3 of the License, or (at your option) any later version.    +
+ * This program is distributed in the hope that it will be useful,            +
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of             +
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              +
+ * GNU General Public License for more details.                               +
+ * (Available at http://www.gnu.org/licenses/)                                +
+ * <br />                                                                     +
+ * &copy; 2006 by Chris Wolcott                                               +
+ * <br />                                                                     +
+ * @author Chris Wolcott - 13-JUN-06  Written                                 +
+ * @version V0R1M0                                                            +
+ * @see SRVDOC_R                                                              +
+ * @param  *CHAR  &SRVPGM                                                     +
+ * @param  *CHAR  &PATH                                                       +
+ */
+             PGM        PARM(&SRVPGM &PATH)
+
+             DCL        VAR(&SRVPGM    ) TYPE(*CHAR) LEN(   20)
+             DCL        VAR(&PATH      ) TYPE(*CHAR) LEN(   50)
+
+             DCL        VAR(&SrvObj    ) TYPE(*CHAR) LEN(   10)
+             DCL        VAR(&SrvLib    ) TYPE(*CHAR) LEN(   10)
+             DCL        VAR(&SrvTxt    ) TYPE(*CHAR) LEN(   50)
+             DCL        VAR(&rtnVal    ) TYPE(*CHAR) LEN(    4)
+             DCL        VAR(&curDir    ) TYPE(*CHAR) LEN( 1024)
+             DCL        VAR(&bufLen    ) TYPE(*DEC ) LEN(  7 0) VALUE(1024)
+
+             CHGVAR     VAR(&curDir) VALUE(' ')
+             RTVCURDIR  RTNDIR(&curDir) DIRNAMLEN(&bufLen)
+             CHGCURDIR  DIR(&PATH)
+
+             CHGVAR     VAR(&SrvObj) VALUE(%SST(&SRVPGM  1 10))
+             CHGVAR     VAR(&SrvLib) VALUE(%SST(&SRVPGM 11 10))
+/*\                                                                            +
+*** Check to see if the specified object exists.                               +
+\*/
+             CHKOBJ     OBJ(&SrvLib/&SrvObj) OBJTYPE(*SRVPGM)
+             MONMSG     MSGID(CPF0000) EXEC(DO)
+                SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('Service Program '  *TCAT  &SrvLib  *TCAT  '/' +
+                             *TCAT &SrvObj  *TCAT  ' NOT found') TOPGMQ(*EXT) MSGTYPE(*STATUS)
+               GOTO     CMDLBL(EXIT)
+             ENDDO
+
+             RTVOBJD    OBJ(&SrvLib/&SrvObj) OBJTYPE(*SRVPGM) +
+                          RTNLIB(&SrvLib) TEXT(&SrvTxt)
+             MONMSG     MSGID(CPF0000) EXEC(DO)
+                SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('Service Program '  *TCAT  &SrvLib  *TCAT  '/' +
+                             *TCAT &SrvObj  *TCAT  ' NOT found') TOPGMQ(*EXT) MSGTYPE(*STATUS)
+               GOTO     CMDLBL(EXIT)
+             ENDDO
+             CALLPRC    PRC(SRVDOC_R) PARM((&SrvPgm) (&SrvTxt)) +
+                          RTNVAL(%BIN(&rtnVal 1 4))
+             IF         COND(%BIN(&rtnVal 1 4) *EQ 0) THEN(DO)
+                SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) MSGDTA('SRVDOC created for '  *TCAT  &SrvObj) TOPGMQ(*EXT) +
+                             MSGTYPE(*STATUS)
+             ENDDO
+             ELSE       CMD(DO)
+                SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('SRVDOC not created for '  *TCAT  &SrvObj) +
+                             TOPGMQ(*EXT) MSGTYPE(*STATUS)
+             ENDDO
+
+ EXIT:       CHGCURDIR  DIR(&curDir)
+
+             ENDPGM
